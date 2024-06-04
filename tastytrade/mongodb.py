@@ -48,7 +48,8 @@ class MongoDB:
             try:
                 # Perform bulk write operation with plain dictionaries
                 await self.collection.insert_many(self.buffer)
-                print(f"Flushed {len(self.buffer)} documents to the database.")
+                # print(f"Flushed {len(self.buffer)} documents to the
+                # database.")
             except BulkWriteError as bwe:
                 print(f"Error during bulk write: {bwe.details}")
             finally:

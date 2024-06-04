@@ -54,7 +54,7 @@ if __name__ == '__main__':
         if x + MAX_SIZE > len(streamer_symbols):
             x = len(streamer_symbols)
         market_data.subscribe_trades(streamer_symbols[x:x+MAX_SIZE])
-        print(f'Trades: {x}')
+        # print(f'Trades: {x}')
     for x in range(0, len(streamer_symbols), MAX_SIZE):
         if x + MAX_SIZE > len(streamer_symbols):
             x = len(streamer_symbols)
