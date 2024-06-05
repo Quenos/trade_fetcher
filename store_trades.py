@@ -46,7 +46,8 @@ if __name__ == '__main__':
     streamer_symbols = create_symbol_list_earlier_expirations(['/ES', '/NQ',
                                                                '/CL', '/GC',
                                                                '/ZB', '/6C',
-                                                               '/6E', '/6A'])
+                                                               '/6E', '/6A',
+                                                               'SPXW', 'SPY'])
     MAX_SIZE = 1000
     market_data = MarketData()
     market_data.start_streamer()

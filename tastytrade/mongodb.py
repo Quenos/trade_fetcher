@@ -18,10 +18,9 @@ class MongoDB:
 
         user: str = config['MONGODB']['User']
         password: str = config['MONGODB']['Password']
+        uri: str = config['MONGODB']['URI']
 
-        self.client = AsyncIOMotorClient(
-            f'mongodb+srv://{user}:{password}@db-mongodb-fra1-32384'
-            f'-85efd705.mongo.ondigitalocean.com/admin?tls=true&authSource=admin&replicaSet=db-mongodb-fra1-32384')
+        self.client = AsyncIOMotorClient(f'mongodb+srv://{user}:{password}@{uri}')
         self.db = self.client[db_name]
         self.collection = self.db[collection_name]
         self.buffer = []
