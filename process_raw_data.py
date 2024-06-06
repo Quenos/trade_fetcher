@@ -25,18 +25,16 @@ def process_document(document):
     # Check the type field and call the appropriate method
     if document.get('type') == 'Trade':
         trades = Trade.from_stream(document['content'])
-        return [convert_decimal(trade.__dict__) for trade in trades if
-                '.' in trade.eventSymbol and trade.time != 0]
+        return [convert_decimal(trade.__dict__) for trade in trades if trade.time != 0]
     elif document.get('type') == 'Greeks':
         greeks = Greeks.from_stream(document['content'])
-        return [convert_decimal(greek.__dict__) for greek in greeks if
-                'SPX' in greek.eventSymbol and greek.time != 0]
+        return [convert_decimal(greek.__dict__) for greek in greeks if greek.time != 0]
     else:
         raise ValueError(f"Unknown document type: {document.get('type')}")
 
 
 def main():
-    def handle_document(document, trade_data, greeks_data):
+    def handle_document(document, trade_data, greeks_data, collection_source):
         try:
             result = process_document(document)
             if result:  # Check if result is not empty
@@ -44,8 +42,15 @@ def main():
                     trade_data.insert_many(result)
                 elif document.get('type') == 'Greeks':
                     greeks_data.insert_many(result)
-        except Exception as e:
-            print(f"error: {e}")
+        except pymongo.errors.BulkWriteError as e:
+            # Check for duplicate key error
+            if any(error['code'] == 11000 for error in e.details['writeErrors']):
+                print("Duplicate key error, deleting source document")
+            else:
+                print(f"error: {e}")
+        finally:
+            # Delete the document from the source collection
+            collection_source.delete_one({'_id': document['_id']})
 
     # Read MongoDB configuration from config.ini
     config = ConfigParser()
@@ -65,14 +70,14 @@ def main():
 
     # Process existing documents
     for document in collection_source.find():
-        handle_document(document, trade_data, greeks_data)
+        handle_document(document, trade_data, greeks_data, collection_source)
 
     # Create a change stream to listen for new documents
     with collection_source.watch() as stream:
         for change in stream:
             if change['operationType'] == 'insert':
                 new_document = change['fullDocument']
-                handle_document(new_document, trade_data, greeks_data)
+                handle_document(new_document, trade_data, greeks_data, collection_source)
 
 
 if __name__ == "__main__":
