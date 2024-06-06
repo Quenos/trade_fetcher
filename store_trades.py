@@ -33,7 +33,7 @@ def create_symbol_list_earlier_expirations(underlying_symbols: list[str]) \
                 if dte > MAX_DTE:
                     continue
                 for option in options:
-                    symbols.append(symbol)
+                    equity_option_symbols.append(symbol)
                     equity_option_symbols.append(option.streamer_symbol)
                     streamer_to_normal_symbols[option.streamer_symbol] = symbol
         elif symbol.startswith('/'):
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     job()
 
     # Schedule the job at 5:30 PM EST every day
-    schedule.every().day.at("17:30").do(job)
+    schedule.every().day.at("05:30").do(job)
 
     while True:
         schedule.run_pending()
