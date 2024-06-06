@@ -129,7 +129,6 @@ if __name__ == '__main__':
     # Time zone setup for EST
     est = pytz.timezone('US/Eastern')
 
-
     # Function to run the main script
     def job():
         print(
@@ -138,8 +137,10 @@ if __name__ == '__main__':
         write_pid()
         main()
 
+    # Start the job immediately
+    job()
 
-    # Schedule the job at 5:30 AM EST every day
+    # Schedule the job at 5:30 PM EST every day
     schedule.every().day.at("17:30").do(job)
 
     while True:
