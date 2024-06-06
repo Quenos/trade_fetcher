@@ -76,6 +76,7 @@ def store_symbol_map(symbol_map: dict[str, str]) -> None:
     documents = []
     for key, value in symbol_map.items():
         documents.append({'streamer_symbol': key, 'underlying_symbol': value})
+    symbol_map_data.drop()
     symbol_map_data.insert_many(documents)
 
 
