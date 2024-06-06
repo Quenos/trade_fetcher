@@ -1,7 +1,6 @@
-from typing import Any
-from configparser import ConfigParser
-
 import sys
+from configparser import ConfigParser
+from typing import Any
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import BulkWriteError
@@ -20,7 +19,7 @@ class MongoDB:
         password: str = config['MONGODB']['Password']
         uri: str = config['MONGODB']['URI']
 
-        self.client = AsyncIOMotorClient(f'mongodb+srv://{user}:{password}@{uri}')
+        self.client = AsyncIOMotorClient(f'mongodb://{user}:{password}@{uri}')
         self.db = self.client[db_name]
         self.collection = self.db[collection_name]
         self.buffer = []

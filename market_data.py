@@ -1,14 +1,12 @@
 import asyncio
 import time
-from typing import List, Dict, ClassVar, Any
+from dataclasses import asdict, dataclass, field
 from threading import Thread
-from dataclasses import dataclass, asdict, field
-
-
-from tastytrade.streamer import DXLinkStreamer, EventType, Greeks, Trade, Quote
-from tastytrade.instruments import Future
+from typing import Any, ClassVar, Dict, List
 
 from session import ApplicationSession
+from tastytrade.instruments import Future
+from tastytrade.streamer import DXLinkStreamer, EventType, Greeks, Quote, Trade
 
 
 @dataclass
@@ -23,6 +21,7 @@ class MarketData:
                                                       default_factory=dict)
     _stop_streaming: bool = field(init=False, default=False)
     _thread_runs: bool = field(init=False, default=False)
+    _lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -73,13 +72,13 @@ class MarketData:
 
     def _subscribe_symbol(self, event_type: EventType,
                           symbols: List[str]) -> None:
-        new_symbols = list(
+        new_symbols = (list(
             set(symbols) - set(self._subscribed_symbols[event_type]))
+                       + self._new_symbols[event_type])
         if new_symbols:
             self._new_symbols[event_type] = new_symbols
             self._subscribed_symbols[event_type] = list(
                 set(self._subscribed_symbols[event_type]) | set(symbols))
-            time.sleep(5)
 
     def _get_events(self, event_type: EventType, symbols: List[str]) \
             -> List[Greeks] | List[Trade] | List[Quote] | None:  # NOQA
@@ -93,42 +92,48 @@ class MarketData:
         async with DXLinkStreamer(session, mongodb=True) as streamer:
             while not self._stop_streaming:
                 if self._new_symbols[EventType.GREEKS]:
+                    await self._lock.acquire()
                     await streamer.subscribe(EventType.GREEKS,
                                              symbols=self._new_symbols[
                                                  EventType.GREEKS])
+                    self._lock.release()
                     self._new_symbols[EventType.GREEKS] = []
                 size = streamer._queues[EventType.QUOTE].qsize()
                 if 0 < size % 100 < 25:
                     print(size)
-                await asyncio.sleep(500)
+                await asyncio.sleep(0.1)
 
     async def _fetch_trades(self) -> None:
         session = ApplicationSession().session  # NOQA
         async with DXLinkStreamer(session, mongodb=True) as streamer:
             while not self._stop_streaming:
                 if self._new_symbols[EventType.TRADE]:
+                    await self._lock.acquire()
                     await streamer.subscribe(EventType.TRADE,
                                              symbols=self._new_symbols[
                                                  EventType.TRADE])
+                    self._lock.release()
                     self._new_symbols[EventType.TRADE] = []
                 size = streamer._queues[EventType.QUOTE].qsize()
                 if 0 < size % 100 < 25:
                     print(size)
-                await asyncio.sleep(500)
+                await asyncio.sleep(0.1)
 
     async def _fetch_quotes(self) -> None:
         session = ApplicationSession().session  # NOQA
         async with DXLinkStreamer(session, mongodb=True) as streamer:
             while not self._stop_streaming:
                 if self._new_symbols[EventType.QUOTE]:
+                    await self._lock.acquire()
                     await streamer.subscribe(EventType.QUOTE,
                                              symbols=self._new_symbols[
                                                  EventType.QUOTE])
+                    self._lock.release()
                     self._new_symbols[EventType.QUOTE] = []
                 size = streamer._queues[EventType.QUOTE].qsize()
                 if 0 < size % 100 < 100:
                     print(size)
-                await asyncio.sleep(500)
+                await asyncio.sleep(0.1)
 
     async def _start_streamers(self) -> None:
         await asyncio.gather(self._fetch_quotes(), self._fetch_trades(),
