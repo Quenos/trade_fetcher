@@ -19,9 +19,6 @@ def convert_decimal(obj):
 
 
 def process_document(document):
-    # Drop the _id field
-    document.pop('_id', None)
-
     # Check the type field and call the appropriate method
     if document.get('type') == 'Trade':
         trades = Trade.from_stream(document['content'])
@@ -35,6 +32,8 @@ def process_document(document):
 
 def main():
     def handle_document(document, trade_data, greeks_data, collection_source):
+        document_id = document['_id']  # Save _id before processing
+        document.pop('_id', None)  # Remove _id field from the document
         try:
             result = process_document(document)
             if result:  # Check if result is not empty
@@ -50,7 +49,7 @@ def main():
                 print(f"error: {e}")
         finally:
             # Delete the document from the source collection
-            collection_source.delete_one({'_id': document['_id']})
+            collection_source.delete_one({'_id': document_id})
 
     # Read MongoDB configuration from config.ini
     config = ConfigParser()
