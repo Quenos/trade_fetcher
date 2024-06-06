@@ -89,6 +89,7 @@ def main():
         'SPX', '/LE',
         '/ZS', '/ZW',
         '/ZC'])
+    store_symbol_map(symbol_map)
     MAX_SIZE = 1000
     market_data = MarketData()
     market_data.start_streamer()
