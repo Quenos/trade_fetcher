@@ -1,3 +1,4 @@
+import datetime
 import time
 from configparser import ConfigParser
 
@@ -56,9 +57,8 @@ def main():
 
             if ids_to_delete:
                 greeks_data.delete_many({'_id': {'$in': ids_to_delete}})
-                print(f"Deleted {len(ids_to_delete)} documents for eventSymbol {group['eventSymbol']}")
 
-        print("Cleanup complete.")
+        print(f"{datetime.datetime}: Cleanup complete.")
         time.sleep(600)
 
 
