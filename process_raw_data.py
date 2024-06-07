@@ -1,7 +1,8 @@
+import time
 from configparser import ConfigParser
 from decimal import Decimal
+
 import pymongo
-import time
 
 from tastytrade.dxfeed.greeks import Greeks
 from tastytrade.dxfeed.trade import Trade
