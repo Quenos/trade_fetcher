@@ -58,7 +58,7 @@ def main():
             if ids_to_delete:
                 greeks_data.delete_many({'_id': {'$in': ids_to_delete}})
 
-        print(f"{datetime.datetime}: Cleanup complete.")
+        print(f"{datetime.datetime.now()}: Cleanup complete.")
         time.sleep(600)
 
 
