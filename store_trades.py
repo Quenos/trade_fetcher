@@ -77,7 +77,14 @@ def store_symbol_map(symbol_map: dict[str, str]) -> None:
     for key, value in symbol_map.items():
         documents.append({'streamer_symbol': key, 'underlying_symbol': value})
     symbol_map_data.drop()
-    symbol_map_data.insert_many(documents)
+    try:
+        symbol_map_data.insert_many(documents, ordered=False)
+    except pymongo.errors.BulkWriteError as e:
+        # Check for duplicate key error
+        if any(error['code'] == 11000 for error in e.details['writeErrors']):
+            print("Duplicate key error, deleting source document")
+        else:
+            print(f"error: {e}")
 
 
 def main():

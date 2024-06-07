@@ -37,9 +37,9 @@ def handle_document(document, trade_data, greeks_data, collection_source):
         result = process_document(document)
         if result:  # Check if result is not empty
             if document.get('type') == 'Trade':
-                trade_data.insert_many(result)
+                trade_data.insert_many(result, ordered=False)
             elif document.get('type') == 'Greeks':
-                greeks_data.insert_many(result)
+                greeks_data.insert_many(result, ordered=False)
     except pymongo.errors.BulkWriteError as e:
         # Check for duplicate key error
         if any(error['code'] == 11000 for error in e.details['writeErrors']):
