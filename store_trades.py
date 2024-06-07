@@ -96,7 +96,10 @@ def main():
         'SPXW', 'SPY',
         'SPX', '/LE',
         '/ZS', '/ZW',
-        '/ZC'])
+        '/ZC', 'AAPL',
+        'MSFT', 'AMZN',
+        'GOOGL', 'TSLA',
+        'NVDA', 'META'])
     store_symbol_map(symbol_map)
     MAX_SIZE = 1000
     market_data = MarketData()
