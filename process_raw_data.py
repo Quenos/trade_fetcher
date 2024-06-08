@@ -1,3 +1,4 @@
+import os
 import time
 from configparser import ConfigParser
 from decimal import Decimal
@@ -6,6 +7,9 @@ import pymongo
 
 from tastytrade.dxfeed.greeks import Greeks
 from tastytrade.dxfeed.trade import Trade
+from utils import log_startup
+
+SCRIPT_NAME = os.path.basename(__file__)
 
 
 def convert_decimal(obj):
@@ -64,6 +68,7 @@ def main():
     # Connect to MongoDB
     client = pymongo.MongoClient(
         f'mongodb://{user}:{password}@{uri}')
+    log_startup(client, SCRIPT_NAME)
     db = client['tastytrade']
     collection_source = db['market_data']
     trade_data = db['trade_data']

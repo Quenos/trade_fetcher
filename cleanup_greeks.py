@@ -1,8 +1,13 @@
 import datetime
+import os
 import time
 from configparser import ConfigParser
 
 import pymongo
+
+from utils import log_startup
+
+SCRIPT_NAME = os.path.basename(__file__)
 
 
 def main():
@@ -16,6 +21,7 @@ def main():
 
     # Connect to MongoDB
     client = pymongo.MongoClient(f'mongodb://{user}:{password}@{uri}')
+    log_startup(client, SCRIPT_NAME)
     db = client['tastytrade']
     greeks_data = db['greeks_data']
 

@@ -9,9 +9,11 @@ from market_data import MarketData
 from session import ApplicationSession
 from tastytrade.instruments import (Future, NestedFutureOptionChain,
                                     get_option_chain)
+from utils import log_startup
 
 MAX_DTE = 365
 PID_FILE = "/tmp/market_data_script.pid"
+SCRIPT_NAME = os.path.basename(__file__)
 
 
 def get_mongo_client():
@@ -106,6 +108,7 @@ def write_pid():
 def main():
     write_pid()
     client = get_mongo_client()
+    log_startup(client, SCRIPT_NAME)
     session = ApplicationSession().session
     symbols = fetch_symbols_from_db(client)
     streamer_symbols, symbol_map = create_symbol_list_earlier_expirations(
