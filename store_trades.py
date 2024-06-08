@@ -1,12 +1,9 @@
 import os
-import signal
 import time
 from configparser import ConfigParser
 from datetime import date, datetime
 
 import pymongo
-import pytz
-import schedule
 
 from market_data import MarketData
 from session import ApplicationSession
@@ -17,13 +14,35 @@ MAX_DTE = 365
 PID_FILE = "/tmp/market_data_script.pid"
 
 
-def create_symbol_list_earlier_expirations(underlying_symbols: list[str]) \
+def get_mongo_client():
+    config = ConfigParser()
+    config.read('config.ini')
+
+    user = config['MONGODB']['User']
+    password = config['MONGODB']['Password']
+    uri = config['MONGODB']['URI']
+
+    # Connect to MongoDB
+    client = pymongo.MongoClient(f'mongodb://{user}:{password}@{uri}')
+    return client
+
+
+def fetch_symbols_from_db(client) -> list[str]:
+    db = client['tastytrade']
+    symbols_collection = db['symbols']
+
+    # Fetch symbols
+    symbols = [doc['symbol'] for doc in symbols_collection.find()]
+    return symbols
+
+
+def create_symbol_list_earlier_expirations(session,
+                                           underlying_symbols: list[str]) \
         -> tuple[list[str | None], dict[str | None, str | None]]:
     equity_option_symbols = []
     future_option_symbols = []
     streamer_to_normal_symbols = {}
-    symbols = []
-    session = ApplicationSession().session
+
     for symbol in underlying_symbols:
         if not symbol.startswith('/'):
             # Get option chain for equity options
@@ -60,18 +79,8 @@ def create_symbol_list_earlier_expirations(underlying_symbols: list[str]) \
         streamer_to_normal_symbols
 
 
-def store_symbol_map(symbol_map: dict[str, str]) -> None:
-    config = ConfigParser()
-    config.read('config.ini')
-
-    user = config['MONGODB']['User']
-    password = config['MONGODB']['Password']
-    uri = config['MONGODB']['URI']
-
-    # Connect to MongoDB
-    client_target = pymongo.MongoClient(
-        f'mongodb://{user}:{password}@{uri}')
-    db_target = client_target['tastytrade']
+def store_symbol_map(client, symbol_map: dict[str, str]) -> None:
+    db_target = client['tastytrade']
     symbol_map_data = db_target['symbol_map']
     documents = []
     for key, value in symbol_map.items():
@@ -87,20 +96,22 @@ def store_symbol_map(symbol_map: dict[str, str]) -> None:
             print(f"error: {e}")
 
 
+def write_pid():
+    pid = str(os.getpid())
+    with open(PID_FILE, 'w') as f:
+        f.write(pid)
+    print(f"Script is running with PID: {pid}")
+
+
 def main():
-    streamer_symbols, symbol_map = create_symbol_list_earlier_expirations([
-        '/ES', '/NQ',
-        '/CL', '/GC',
-        '/ZB', '/6C',
-        '/6E', '/6A',
-        'SPXW', 'SPY',
-        'SPX', '/LE',
-        '/ZS', '/ZW',
-        '/ZC', 'AAPL',
-        'MSFT', 'AMZN',
-        'GOOGL', 'TSLA',
-        'NVDA', 'META'])
-    store_symbol_map(symbol_map)
+    write_pid()
+    client = get_mongo_client()
+    session = ApplicationSession().session
+    symbols = fetch_symbols_from_db(client)
+    streamer_symbols, symbol_map = create_symbol_list_earlier_expirations(
+        session, symbols)
+    store_symbol_map(client, symbol_map)
+
     MAX_SIZE = 1000
     market_data = MarketData()
     market_data.start_streamer()
@@ -118,43 +129,5 @@ def main():
         time.sleep(1000)
 
 
-def stop_existing_process():
-    if os.path.isfile(PID_FILE):
-        with open(PID_FILE, 'r') as f:
-            pid = int(f.read().strip())
-        try:
-            os.kill(pid, signal.SIGTERM)
-            print(f"Stopped existing process with PID: {pid}")
-        except ProcessLookupError:
-            print("No process found with PID:", pid)
-        os.remove(PID_FILE)
-
-
-def write_pid():
-    pid = str(os.getpid())
-    with open(PID_FILE, 'w') as f:
-        f.write(pid)
-    print(f"Script is running with PID: {pid}")
-
-
 if __name__ == '__main__':
-    # Time zone setup for EST
-    est = pytz.timezone('US/Eastern')
-
-    # Function to run the main script
-    def job():
-        print(
-            f"Script started at {datetime.now(est).strftime('%Y-%m-%d %H:%M:%S')} EST")
-        stop_existing_process()
-        write_pid()
-        main()
-
-    # Start the job immediately
-    job()
-
-    # Schedule the job at 5:30 PM EST every day
-    schedule.every().day.at("05:30").do(job)
-
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+    main()
