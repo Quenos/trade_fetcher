@@ -68,7 +68,7 @@ def main():
     # Connect to MongoDB
     client = pymongo.MongoClient(
         f'mongodb://{user}:{password}@{uri}')
-    log(client, SCRIPT_NAME)
+    log(client, SCRIPT_NAME, "start up")
     db = client['tastytrade']
     collection_source = db['market_data']
     trade_data = db['trade_data']
