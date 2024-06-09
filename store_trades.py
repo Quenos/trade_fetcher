@@ -124,7 +124,6 @@ def write_pid():
 
 
 def main():
-    sleep_until('09:10')
     write_pid()
     client = get_mongo_client()
     log_startup(client, SCRIPT_NAME)
