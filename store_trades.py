@@ -124,6 +124,7 @@ def write_pid():
 
 
 def main():
+    sleep_until('09:10')
     write_pid()
     client = get_mongo_client()
     log_startup(client, SCRIPT_NAME)
@@ -146,8 +147,7 @@ def main():
             x = len(streamer_symbols)
         market_data.subscribe_greeks(streamer_symbols[x:x + MAX_SIZE])
         time.sleep(5)
-    while True:
-        sleep_until('09:05')
+    sleep_until('09:15')
 
 
 if __name__ == '__main__':
