@@ -7,7 +7,7 @@ import pymongo
 
 from tastytrade.dxfeed.greeks import Greeks
 from tastytrade.dxfeed.trade import Trade
-from utils import log_startup
+from utils import log
 
 SCRIPT_NAME = os.path.basename(__file__)
 
@@ -68,7 +68,7 @@ def main():
     # Connect to MongoDB
     client = pymongo.MongoClient(
         f'mongodb://{user}:{password}@{uri}')
-    log_startup(client, SCRIPT_NAME)
+    log(client, SCRIPT_NAME)
     db = client['tastytrade']
     collection_source = db['market_data']
     trade_data = db['trade_data']
