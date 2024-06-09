@@ -21,17 +21,16 @@ def sleep_until(target_time_str):
     # Parse the input time string
     target_hour, target_minute = map(int, target_time_str.split(':'))
 
-    while True:
-        now = datetime.now(timezone.utc)
-        target_time = now.replace(hour=target_hour, minute=target_minute,
-                                  second=0, microsecond=0)
+    now = datetime.now(timezone.utc)
+    target_time = now.replace(hour=target_hour, minute=target_minute,
+                              second=0, microsecond=0)
 
-        if now >= target_time:
-            # If the current time is past the target time, target the next day
-            target_time += timedelta(days=1)
+    if now >= target_time:
+        # If the current time is past the target time, target the next day
+        target_time += timedelta(days=1)
 
-        sleep_duration = (target_time - now).total_seconds()
-        time.sleep(sleep_duration)
+    sleep_duration = (target_time - now).total_seconds()
+    time.sleep(sleep_duration)
 
 
 def get_mongo_client():
@@ -147,7 +146,7 @@ def main():
         market_data.subscribe_greeks(streamer_symbols[x:x + MAX_SIZE])
         time.sleep(5)
     log(client, SCRIPT_NAME, 'going to sleep')
-    sleep_until('09:45')
+    sleep_until('10:15')
     log(client, SCRIPT_NAME, 'waking up')
 
 
