@@ -145,9 +145,8 @@ def main():
             x = len(streamer_symbols)
         market_data.subscribe_greeks(streamer_symbols[x:x + MAX_SIZE])
         time.sleep(5)
-    log(client, SCRIPT_NAME, 'going to sleep')
-    sleep_until('10:15')
-    log(client, SCRIPT_NAME, 'waking up')
+    sleep_until('02:00')
+    log(client, SCRIPT_NAME, 'daily restart')
 
 
 if __name__ == '__main__':
