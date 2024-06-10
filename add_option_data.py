@@ -29,7 +29,9 @@ def process_symbol_map(session: Any, client: pymongo.MongoClient):
     symbol_map_collection = db.symbol_map
 
     # Iterate through all documents in the collection
-    for document in symbol_map_collection.find():
+    query = {'$or': [{'base_symbol': {'$exists': False}}, {'base_symbol': ''}]}
+
+    for document in symbol_map_collection.find(query):
         streamer_symbol = document.get("streamer_symbol")
         underlying_symbol = document.get("underlying_symbol")
         if underlying_symbol.startswith('/'):
