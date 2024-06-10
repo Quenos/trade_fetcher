@@ -72,7 +72,7 @@ def create_symbol_list(session, underlying_symbols: list[str]):
                     equity_option_symbols.append(option.streamer_symbol)
                     option_type = 'CALL' if (option.option_type ==
                                              OptionType.CALL) else \
-                                            'PUT'
+                        'PUT'
                     symbol_map = {'streamer_symbol': option.streamer_symbol,
                                   'underlying_symbol': symbol,
                                   'base_symbol': symbol,
@@ -96,16 +96,14 @@ def create_symbol_list(session, underlying_symbols: list[str]):
                 for strike in option.strikes:
                     future_option_symbols.append(strike.call_streamer_symbol)
                     future_option_symbols.append(strike.put_streamer_symbol)
-                    symbol_map = {'streamer_symbol':
-                                      option.call_streamer_symbol,
+                    symbol_map = {'streamer_symbol':strike.call_streamer_symbol,
                                   'underlying_symbol': symbol,
                                   'base_symbol': symbol[:3],
                                   'expiration_date': option.expires_at,
                                   'strike_price': strike.strike_price,
                                   'option_type': 'CALL'}
                     streamer_to_normal_symbols.append(symbol_map)
-                    symbol_map = {'streamer_symbol':
-                                      option.put_streamer_symbol,
+                    symbol_map = {'streamer_symbol': strike.put_streamer_symbol,
                                   'underlying_symbol': symbol,
                                   'base_symbol': symbol[:3],
                                   'expiration_date': option.expires_at,
