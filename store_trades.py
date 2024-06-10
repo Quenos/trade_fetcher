@@ -3,7 +3,7 @@ import time
 from configparser import ConfigParser
 from datetime import date, datetime, timedelta, timezone
 
-import pymongo
+from pymongo import MongoClient, errors
 
 from market_data import MarketData
 from session import ApplicationSession
@@ -41,7 +41,7 @@ def get_mongo_client():
     uri = config['MONGODB']['URI']
 
     # Connect to MongoDB
-    client = pymongo.MongoClient(f'mongodb://{user}:{password}@{uri}')
+    client = MongoClient(f'mongodb://{user}:{password}@{uri}')
     return client
 
 
@@ -115,17 +115,25 @@ def create_symbol_list(session, underlying_symbols: list[str]):
         streamer_to_normal_symbols
 
 
-def store_symbol_map(client, symbol_map: list[dict]) -> None:
+def store_symbol_map(client: MongoClient,
+                     symbol_map: list[dict],
+                     batch_size: int = 10000) -> None:
     db_target = client['tastytrade']
     symbol_map_data = db_target['symbol_map']
-    try:
-        symbol_map_data.insert_many(symbol_map, ordered=False)
-    except pymongo.errors.BulkWriteError as e:
-        # Check for duplicate key error
-        if any(error['code'] == 11000 for error in e.details['writeErrors']):
-            print("Duplicate key error, deleting source document")
-        else:
-            print(f"error: {e}")
+
+    def insert_batch(batch):
+        try:
+            symbol_map_data.insert_many(batch, ordered=False)
+        except errors.BulkWriteError as e:
+            # Check for duplicate key error
+            if any(error['code'] == 11000 for error in e.details['writeErrors']):
+                pass
+            else:
+                print(f"error: {e}")
+
+    for i in range(0, len(symbol_map), batch_size):
+        batch = symbol_map[i:i + batch_size]
+        insert_batch(batch)
 
 
 def write_pid():
