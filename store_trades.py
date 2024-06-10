@@ -77,7 +77,7 @@ def create_symbol_list(session, underlying_symbols: list[str]):
                                   'underlying_symbol': symbol,
                                   'base_symbol': symbol,
                                   'expiration_date': option.expires_at,
-                                  'strike_price': option.strike_price,
+                                  'strike_price': float(option.strike_price),
                                   'option_type': option_type}
                     streamer_to_normal_symbols.append(symbol_map)
         elif symbol.startswith('/'):
@@ -100,14 +100,14 @@ def create_symbol_list(session, underlying_symbols: list[str]):
                                   'underlying_symbol': symbol,
                                   'base_symbol': symbol[:3],
                                   'expiration_date': option.expires_at,
-                                  'strike_price': strike.strike_price,
+                                  'strike_price': float(strike.strike_price),
                                   'option_type': 'CALL'}
                     streamer_to_normal_symbols.append(symbol_map)
                     symbol_map = {'streamer_symbol': strike.put_streamer_symbol,
                                   'underlying_symbol': symbol,
                                   'base_symbol': symbol[:3],
                                   'expiration_date': option.expires_at,
-                                  'strike_price': strike.strike_price,
+                                  'strike_price': float(strike.strike_price),
                                   'option_type': 'PUT'}
                     streamer_to_normal_symbols.append(symbol_map)
 
