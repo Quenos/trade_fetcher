@@ -1,15 +1,14 @@
-from datetime import datetime, timedelta, timezone
 import os
 import time
 from configparser import ConfigParser
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 
 import pymongo
 
 from market_data import MarketData
 from session import ApplicationSession
 from tastytrade.instruments import (Future, NestedFutureOptionChain,
-                                    get_option_chain)
+                                    get_option_chain, OptionType)
 from utils import log
 
 MAX_DTE = 365
@@ -55,12 +54,10 @@ def fetch_symbols_from_db(client) -> list[str]:
     return symbols
 
 
-def create_symbol_list_earlier_expirations(session,
-                                           underlying_symbols: list[str]) \
-        -> tuple[list[str | None], dict[str | None, str | None]]:
+def create_symbol_list(session, underlying_symbols: list[str]):
     equity_option_symbols = []
     future_option_symbols = []
-    streamer_to_normal_symbols = {}
+    streamer_to_normal_symbols = []
 
     for symbol in underlying_symbols:
         if not symbol.startswith('/'):
@@ -73,7 +70,16 @@ def create_symbol_list_earlier_expirations(session,
                 for option in options:
                     equity_option_symbols.append(symbol)
                     equity_option_symbols.append(option.streamer_symbol)
-                    streamer_to_normal_symbols[option.streamer_symbol] = symbol
+                    option_type = 'CALL' if (option.option_type ==
+                                             OptionType.CALL) else \
+                                            'PUT'
+                    symbol_map = {'streamer_symbol': option.streamer_symbol,
+                                  'underlying_symbol': symbol,
+                                  'base_symbol': symbol,
+                                  'expiration_date': option.expires_at,
+                                  'strike_price': option.strike_price,
+                                  'option_type': option_type}
+                    streamer_to_normal_symbols.append(symbol_map)
         elif symbol.startswith('/'):
             # Get option chain for future options
             option_chain = sorted(NestedFutureOptionChain
@@ -90,23 +96,32 @@ def create_symbol_list_earlier_expirations(session,
                 for strike in option.strikes:
                     future_option_symbols.append(strike.call_streamer_symbol)
                     future_option_symbols.append(strike.put_streamer_symbol)
-                    streamer_to_normal_symbols[strike.call_streamer_symbol] = \
-                        underlying_symbol.streamer_symbol
-                    streamer_to_normal_symbols[strike.put_streamer_symbol] = \
-                        underlying_symbol.streamer_symbol
+                    symbol_map = {'streamer_symbol':
+                                      option.call_streamer_symbol,
+                                  'underlying_symbol': symbol,
+                                  'base_symbol': symbol[:3],
+                                  'expiration_date': option.expires_at,
+                                  'strike_price': strike.strike_price,
+                                  'option_type': 'CALL'}
+                    streamer_to_normal_symbols.append(symbol_map)
+                    symbol_map = {'streamer_symbol':
+                                      option.put_streamer_symbol,
+                                  'underlying_symbol': symbol,
+                                  'base_symbol': symbol[:3],
+                                  'expiration_date': option.expires_at,
+                                  'strike_price': strike.strike_price,
+                                  'option_type': 'PUT'}
+                    streamer_to_normal_symbols.append(symbol_map)
+
     return list(set(equity_option_symbols + future_option_symbols)), \
         streamer_to_normal_symbols
 
 
-def store_symbol_map(client, symbol_map: dict[str, str]) -> None:
+def store_symbol_map(client, symbol_map: list[dict]) -> None:
     db_target = client['tastytrade']
     symbol_map_data = db_target['symbol_map']
-    documents = []
-    for key, value in symbol_map.items():
-        documents.append({'streamer_symbol': key, 'underlying_symbol': value})
-    symbol_map_data.drop()
     try:
-        symbol_map_data.insert_many(documents, ordered=False)
+        symbol_map_data.insert_many(symbol_map, ordered=False)
     except pymongo.errors.BulkWriteError as e:
         # Check for duplicate key error
         if any(error['code'] == 11000 for error in e.details['writeErrors']):
@@ -128,11 +143,10 @@ def main():
     log(client, SCRIPT_NAME, 'start up')
     session = ApplicationSession().session
     symbols = fetch_symbols_from_db(client)
-    streamer_symbols, symbol_map = create_symbol_list_earlier_expirations(
-        session, symbols)
+    streamer_symbols, symbol_map = create_symbol_list(session, symbols)
     store_symbol_map(client, symbol_map)
 
-    MAX_SIZE = 1000
+    MAX_SIZE = 1000  # NOQA 
     market_data = MarketData()
     market_data.start_streamer()
     for x in range(0, len(streamer_symbols), MAX_SIZE):
