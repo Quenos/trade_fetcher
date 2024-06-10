@@ -48,7 +48,7 @@ def handle_document(document, trade_data, greeks_data, collection_source):
     except pymongo.errors.BulkWriteError as e:
         # Check for duplicate key error
         if any(error['code'] == 11000 for error in e.details['writeErrors']):
-            print("Duplicate key error, deleting source document")
+            pass
         else:
             print(f"error: {e}")
     finally:
