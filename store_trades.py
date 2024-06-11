@@ -125,7 +125,7 @@ def create_symbol_list(session, underlying_symbols: list[str]):
                                   'option_type': 'CALL'}
                     streamer_to_normal_symbols.append(symbol_map)
                     symbol_map = {'streamer_symbol': strike.put_streamer_symbol,
-                                  'underlying_symbol': symbol,
+                                  'underlying_symbol': option.underlying_symbol,
                                   'base_symbol': symbol[:3],
                                   'expiration_date': option.expires_at,
                                   'strike_price': float(strike.strike_price),
