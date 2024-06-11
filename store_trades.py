@@ -45,6 +45,27 @@ def get_mongo_client():
     return client
 
 
+def create_symbols_collection(client):
+    db = client['tastytrade']
+    symbols_collection = db['symbols']
+
+    # Define the symbols and their full names
+    symbols_data = [
+        {'symbol': '/ES', 'full_name': 'E-mini S&P 500'},
+        {'symbol': '/CL', 'full_name': 'Crude Oil'},
+        {'symbol': '/GC', 'full_name': 'Gold'},
+        {'symbol': '/ZB', 'full_name': '30-Year U.S. Treasury Bond'},
+        {'symbol': '/RTY', 'full_name': 'Russell 2000'},
+        {'symbol': '/6A', 'full_name': 'Australian Dollar'},
+        {'symbol': '/6E', 'full_name': 'Euro'},
+        {'symbol': 'SPY', 'full_name': 'SPDR S&P 500 ETF'},
+        {'symbol': 'SPX', 'full_name': 'S&P 500 Index'},
+        {'symbol': 'SPXW', 'full_name': 'S&P 500 Weekly Options'}
+    ]
+
+    symbols_collection.insert_many(symbols_data)
+
+
 def fetch_symbols_from_db(client) -> list[str]:
     db = client['tastytrade']
     symbols_collection = db['symbols']
@@ -97,7 +118,7 @@ def create_symbol_list(session, underlying_symbols: list[str]):
                     future_option_symbols.append(strike.call_streamer_symbol)
                     future_option_symbols.append(strike.put_streamer_symbol)
                     symbol_map = {'streamer_symbol':strike.call_streamer_symbol,
-                                  'underlying_symbol': symbol,
+                                  'underlying_symbol': option.underlying_symbol,
                                   'base_symbol': symbol[:3],
                                   'expiration_date': option.expires_at,
                                   'strike_price': float(strike.strike_price),
