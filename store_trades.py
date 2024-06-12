@@ -183,8 +183,6 @@ def main():
         time.sleep(5)
         market_data.subscribe_greeks(streamer_symbols[x:x + MAX_SIZE])
         time.sleep(5)
-        market_data.subscribe_quotes(streamer_symbols[x:x + MAX_SIZE])
-        time.sleep(5)
     sleep_until('02:00')
     log(client, SCRIPT_NAME, 'daily restart')
 
