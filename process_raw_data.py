@@ -7,6 +7,7 @@ import pymongo
 
 from tastytrade.dxfeed.greeks import Greeks
 from tastytrade.dxfeed.trade import Trade
+from tastytrade.dxfeed.quote import Quote
 from utils import log
 
 SCRIPT_NAME = os.path.basename(__file__)
@@ -31,11 +32,19 @@ def process_document(document):
     elif document.get('type') == 'Greeks':
         greeks = Greeks.from_stream(document['content'])
         return [convert_decimal(greek.__dict__) for greek in greeks if greek.time != 0]
+    elif document.get('type') == 'Quote':
+        quotes = Quote.from_stream(document['content'])
+        return [convert_decimal(quote.__dict__) for quote in quotes if
+                quote.time != 0]
     else:
         raise ValueError(f"Unknown document type: {document.get('type')}")
 
 
-def handle_document(document, trade_data, greeks_data, collection_source):
+def handle_document(document,
+                    trade_data,
+                    greeks_data,
+                    quote_data,
+                    collection_source):
     document_id = document['_id']  # Save _id before processing
     document.pop('_id', None)  # Remove _id field from the document
     try:
@@ -45,6 +54,8 @@ def handle_document(document, trade_data, greeks_data, collection_source):
                 trade_data.insert_many(result, ordered=False)
             elif document.get('type') == 'Greeks':
                 greeks_data.insert_many(result, ordered=False)
+            elif document.get('type') == 'Greeks':
+                quote_data.insert_many(result, ordered=False)
     except pymongo.errors.BulkWriteError as e:
         # Check for duplicate key error
         if any(error['code'] == 11000 for error in e.details['writeErrors']):
@@ -73,11 +84,16 @@ def main():
     collection_source = db['market_data']
     trade_data = db['trade_data']
     greeks_data = db['greeks_data']
+    quote_data = db['quote_data']
 
     while True:
         # Process existing documents
         for document in collection_source.find():
-            handle_document(document, trade_data, greeks_data, collection_source)
+            handle_document(document,
+                            trade_data,
+                            greeks_data,
+                            quote_data,
+                            collection_source)
 
         # Sleep for a while before checking for new documents again
         time.sleep(10)
