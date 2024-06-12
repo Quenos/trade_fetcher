@@ -34,8 +34,7 @@ def process_document(document):
         return [convert_decimal(greek.__dict__) for greek in greeks if greek.time != 0]
     elif document.get('type') == 'Quote':
         quotes = Quote.from_stream(document['content'])
-        return [convert_decimal(quote.__dict__) for quote in quotes if
-                quote.time != 0]
+        return [convert_decimal(quote.__dict__) for quote in quotes]
     else:
         raise ValueError(f"Unknown document type: {document.get('type')}")
 
@@ -54,7 +53,7 @@ def handle_document(document,
                 trade_data.insert_many(result, ordered=False)
             elif document.get('type') == 'Greeks':
                 greeks_data.insert_many(result, ordered=False)
-            elif document.get('type') == 'Greeks':
+            elif document.get('type') == 'Quote':
                 quote_data.insert_many(result, ordered=False)
     except pymongo.errors.BulkWriteError as e:
         # Check for duplicate key error

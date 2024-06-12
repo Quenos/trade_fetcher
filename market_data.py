@@ -98,9 +98,6 @@ class MarketData:
                                                  EventType.GREEKS])
                     self._lock.release()
                     self._new_symbols[EventType.GREEKS] = []
-                size = streamer._queues[EventType.QUOTE].qsize()
-                if 0 < size % 100 < 25:
-                    print(size)
                 await asyncio.sleep(0.1)
 
     async def _fetch_trades(self) -> None:
@@ -114,9 +111,6 @@ class MarketData:
                                                  EventType.TRADE])
                     self._lock.release()
                     self._new_symbols[EventType.TRADE] = []
-                size = streamer._queues[EventType.QUOTE].qsize()
-                if 0 < size % 100 < 25:
-                    print(size)
                 await asyncio.sleep(0.1)
 
     async def _fetch_quotes(self) -> None:
@@ -130,9 +124,6 @@ class MarketData:
                                                  EventType.QUOTE])
                     self._lock.release()
                     self._new_symbols[EventType.QUOTE] = []
-                size = streamer._queues[EventType.QUOTE].qsize()
-                if 0 < size % 100 < 100:
-                    print(size)
                 await asyncio.sleep(0.1)
 
     async def _start_streamers(self) -> None:
