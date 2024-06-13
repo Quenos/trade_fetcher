@@ -119,14 +119,14 @@ def create_symbol_list(session, underlying_symbols: list[str]):
                     future_option_symbols.append(strike.put_streamer_symbol)
                     symbol_map = {'streamer_symbol':strike.call_streamer_symbol,
                                   'underlying_symbol': underlying_symbol.streamer_symbol,
-                                  'base_symbol': symbol[:3],
+                                  'base_symbol': symbol,
                                   'expiration_date': option.expires_at,
                                   'strike_price': float(strike.strike_price),
                                   'option_type': 'CALL'}
                     streamer_to_normal_symbols.append(symbol_map)
                     symbol_map = {'streamer_symbol': strike.put_streamer_symbol,
                                   'underlying_symbol': underlying_symbol.streamer_symbol,
-                                  'base_symbol': symbol[:3],
+                                  'base_symbol': symbol,
                                   'expiration_date': option.expires_at,
                                   'strike_price': float(strike.strike_price),
                                   'option_type': 'PUT'}
@@ -148,7 +148,7 @@ def store_symbol_map(client: MongoClient,
         except errors.BulkWriteError as e:
             # Check for duplicate key error
             if any(error['code'] == 11000 for error in e.details['writeErrors']):
-                pass
+                print('duplicate key error')
             else:
                 print(f"error: {e}")
 
@@ -162,6 +162,16 @@ def write_pid():
     with open(PID_FILE, 'w') as f:
         f.write(pid)
     print(f"Script is running with PID: {pid}")
+
+
+def update_base_symbols_in_db(client: MongoClient) -> None:
+    db = client['tastytrade']
+    symbol_map_collection = db['symbol_map']
+
+    result = symbol_map_collection.update_many(
+        {'base_symbol': '/RT'},
+        {'$set': {'base_symbol': '/RTY'}}
+    )
 
 
 def main():
