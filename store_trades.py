@@ -9,6 +9,8 @@ from market_data import MarketData
 from session import ApplicationSession
 from tastytrade.instruments import (Future, NestedFutureOptionChain,
                                     get_option_chain, OptionType)
+from tastytrade.metrics import get_risk_free_rate
+
 from utils import log
 
 MAX_DTE = 365
@@ -44,6 +46,16 @@ def get_mongo_client():
     client = MongoClient(f'mongodb://{user}:{password}@{uri}')
     return client
 
+
+def store_risk_free_rate(session, client):
+    db = client['tastytrade']
+    risk_free_rate_collection = db['risk_free_rate']
+
+    rfr = float(get_risk_free_rate(session))
+    risk_free_rate_collection.insert_one({
+        'date': datetime.now(),
+        'rate': rfr
+    })
 
 def create_symbols_collection(client):
     db = client['tastytrade']
@@ -183,6 +195,7 @@ def main():
     client = get_mongo_client()
     log(client, SCRIPT_NAME, 'start up')
     session = ApplicationSession().session
+    store_risk_free_rate(session, client)
     symbols = fetch_symbols_from_db(client)
     streamer_symbols, symbol_map = create_symbol_list(session, symbols)
     store_symbol_map(client, symbol_map)
